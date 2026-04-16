@@ -1,0 +1,709 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>SVG Motion Tool</title>
+    <style>
+      :root {
+        color-scheme: dark;
+        font-family: Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        min-height: 100vh;
+        background: #020617;
+        color: #e2e8f0;
+        display: grid;
+        place-items: center;
+        padding: 1rem;
+      }
+
+      .panel {
+        width: min(900px, 96vw);
+        background: #0b1220;
+        border: 1px solid #1e293b;
+        border-radius: 0.9rem;
+        padding: 1rem;
+        display: grid;
+        gap: 0.8rem;
+      }
+
+      h1 {
+        margin: 0;
+        font-size: 1.2rem;
+      }
+
+      p {
+        margin: 0;
+        color: #94a3b8;
+        font-size: 0.92rem;
+      }
+
+      .row {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 0.7rem;
+      }
+
+      .group {
+        display: grid;
+        gap: 0.35rem;
+      }
+
+      label {
+        font-size: 0.82rem;
+        color: #cbd5e1;
+      }
+
+      select,
+      input,
+      textarea,
+      button {
+        width: 100%;
+        border-radius: 0.5rem;
+        border: 1px solid #334155;
+        background: #111827;
+        color: #e2e8f0;
+        padding: 0.55rem 0.6rem;
+      }
+
+      textarea {
+        resize: vertical;
+        min-height: 8rem;
+        font-size: 0.78rem;
+        font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+      }
+
+      .actions {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 0.7rem;
+      }
+
+      .motion-controls {
+        display: grid;
+        gap: 0.6rem;
+        padding: 0.75rem;
+        border: 1px solid #1e293b;
+        border-radius: 0.6rem;
+        background: #0a1020;
+      }
+
+      .motion-controls-title {
+        margin: 0;
+        font-size: 0.9rem;
+        color: #cbd5e1;
+      }
+
+      .motion-specific {
+        display: none;
+      }
+
+      .motion-specific.is-visible {
+        display: grid;
+      }
+
+      button {
+        cursor: pointer;
+      }
+
+      button:hover {
+        background: #1e293b;
+      }
+
+      .preview {
+        min-height: 18rem;
+        border: 1px solid #334155;
+        border-radius: 0.6rem;
+        background: #020617;
+        display: grid;
+        place-items: center;
+        padding: 1.2rem;
+      }
+
+      .preview svg {
+        width: min(70vw, 16rem);
+        height: min(70vw, 16rem);
+      }
+
+      @media (max-width: 700px) {
+        .row,
+        .actions {
+          grid-template-columns: 1fr;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <main class="panel">
+      <h1>SVG Motion Tool</h1>
+      <p>Upload an SVG file, choose a motion preset, preview it, and export animated SVG markup.</p>
+
+      <div class="group">
+        <label for="svgMotionFile">SVG File</label>
+        <input id="svgMotionFile" type="file" accept=".svg,image/svg+xml" />
+      </div>
+
+      <div class="row">
+        <div class="group">
+          <label for="svgMotionType">Motion Type</label>
+          <select id="svgMotionType">
+            <option value="rotate">Rotate</option>
+            <option value="pulse">Pulse</option>
+            <option value="float">Float</option>
+            <option value="wobble">Wobble</option>
+            <option value="bounce">Bounce</option>
+            <option value="orbit">Orbit</option>
+            <option value="shake">Shake</option>
+            <option value="swing">Swing</option>
+            <option value="flip">Flip</option>
+            <option value="heartbeat">Heartbeat</option>
+          </select>
+        </div>
+        <div class="group">
+          <label for="svgMotionDuration">Duration (s): <span id="svgMotionDurationValue">2.4</span></label>
+          <input id="svgMotionDuration" type="range" min="0.2" max="30" step="0.1" value="2.4" />
+        </div>
+      </div>
+
+      <section class="motion-controls">
+        <p class="motion-controls-title">Motion Controls</p>
+        <div class="row">
+          <div class="group">
+            <label for="svgMotionSpeed">Speed Multiplier: <span id="svgMotionSpeedValue">1.0</span>x</label>
+            <input id="svgMotionSpeed" type="range" min="0.2" max="4" step="0.1" value="1" />
+          </div>
+          <div class="group">
+            <label for="svgMotionLoopCount">Loop Count: <span id="svgMotionLoopCountValue">1</span></label>
+            <input id="svgMotionLoopCount" type="range" min="1" max="20" step="1" value="1" />
+          </div>
+        </div>
+
+        <div class="row">
+          <div class="group">
+            <label for="svgMotionEasing">Easing</label>
+            <select id="svgMotionEasing">
+              <option value="linear">Linear</option>
+              <option value="ease-in-out">Ease In/Out</option>
+              <option value="ease-in">Ease In</option>
+              <option value="ease-out">Ease Out</option>
+              <option value="ease-in-sine">Ease In Sine</option>
+              <option value="ease-out-sine">Ease Out Sine</option>
+              <option value="ease-in-out-sine">Ease In/Out Sine</option>
+              <option value="ease-in-cubic">Ease In Cubic</option>
+              <option value="ease-out-cubic">Ease Out Cubic</option>
+              <option value="ease-in-out-cubic">Ease In/Out Cubic</option>
+              <option value="ease-in-back">Ease In Back</option>
+              <option value="ease-out-back">Ease Out Back</option>
+              <option value="ease-in-out-back">Ease In/Out Back</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="row motion-specific" data-motion="rotate wobble swing shake flip">
+          <div class="group">
+            <label for="svgMotionAngle">Angle: <span id="svgMotionAngleValue">360</span>deg</label>
+            <input id="svgMotionAngle" type="range" min="15" max="720" step="5" value="360" />
+          </div>
+          <div class="group">
+            <label for="svgMotionDirection">Direction</label>
+            <select id="svgMotionDirection">
+              <option value="forward">Forward</option>
+              <option value="reverse">Reverse</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="row motion-specific" data-motion="pulse heartbeat">
+          <div class="group">
+            <label for="svgMotionScaleAmount">Scale Strength: <span id="svgMotionScaleAmountValue">1.14</span>x</label>
+            <input id="svgMotionScaleAmount" type="range" min="1.02" max="1.8" step="0.01" value="1.14" />
+          </div>
+          <div class="group">
+            <label for="svgMotionPulseBias">Pulse Bias: <span id="svgMotionPulseBiasValue">0.5</span></label>
+            <input id="svgMotionPulseBias" type="range" min="0" max="1" step="0.05" value="0.5" />
+          </div>
+        </div>
+
+        <div class="row motion-specific" data-motion="float bounce">
+          <div class="group">
+            <label for="svgMotionDistance">Distance: <span id="svgMotionDistanceValue">10</span>%</label>
+            <input id="svgMotionDistance" type="range" min="2" max="40" step="1" value="10" />
+          </div>
+          <div class="group">
+            <label for="svgMotionBounciness">Bounciness: <span id="svgMotionBouncinessValue">0.6</span></label>
+            <input id="svgMotionBounciness" type="range" min="0" max="1" step="0.05" value="0.6" />
+          </div>
+        </div>
+
+        <div class="row motion-specific" data-motion="orbit">
+          <div class="group">
+            <label for="svgMotionOrbitRadius">Orbit Radius: <span id="svgMotionOrbitRadiusValue">12</span>%</label>
+            <input id="svgMotionOrbitRadius" type="range" min="2" max="45" step="1" value="12" />
+          </div>
+          <div class="group">
+            <label for="svgMotionOrbitTilt">Orbit Tilt: <span id="svgMotionOrbitTiltValue">0</span>deg</label>
+            <input id="svgMotionOrbitTilt" type="range" min="-45" max="45" step="1" value="0" />
+          </div>
+        </div>
+      </section>
+
+      <div class="actions">
+        <button id="playMotionSvg" type="button">Play Animation</button>
+        <button id="generateMotionSvg" type="button">Generate Animated SVG</button>
+        <button id="downloadMotionSvg" type="button">Download Animated SVG</button>
+      </div>
+
+      <div class="group">
+        <label for="svgMotionOutput">Animated SVG Output</label>
+        <textarea id="svgMotionOutput" readonly></textarea>
+      </div>
+
+      <div id="svgMotionPreview" class="preview"></div>
+    </main>
+
+    <script>
+      const controls = {
+        svgMotionFile: document.getElementById("svgMotionFile"),
+        svgMotionType: document.getElementById("svgMotionType"),
+        svgMotionDuration: document.getElementById("svgMotionDuration"),
+        svgMotionDurationValue: document.getElementById("svgMotionDurationValue"),
+        svgMotionSpeed: document.getElementById("svgMotionSpeed"),
+        svgMotionSpeedValue: document.getElementById("svgMotionSpeedValue"),
+        svgMotionLoopCount: document.getElementById("svgMotionLoopCount"),
+        svgMotionLoopCountValue: document.getElementById("svgMotionLoopCountValue"),
+        svgMotionEasing: document.getElementById("svgMotionEasing"),
+        svgMotionAngle: document.getElementById("svgMotionAngle"),
+        svgMotionAngleValue: document.getElementById("svgMotionAngleValue"),
+        svgMotionDirection: document.getElementById("svgMotionDirection"),
+        svgMotionScaleAmount: document.getElementById("svgMotionScaleAmount"),
+        svgMotionScaleAmountValue: document.getElementById("svgMotionScaleAmountValue"),
+        svgMotionPulseBias: document.getElementById("svgMotionPulseBias"),
+        svgMotionPulseBiasValue: document.getElementById("svgMotionPulseBiasValue"),
+        svgMotionDistance: document.getElementById("svgMotionDistance"),
+        svgMotionDistanceValue: document.getElementById("svgMotionDistanceValue"),
+        svgMotionBounciness: document.getElementById("svgMotionBounciness"),
+        svgMotionBouncinessValue: document.getElementById("svgMotionBouncinessValue"),
+        svgMotionOrbitRadius: document.getElementById("svgMotionOrbitRadius"),
+        svgMotionOrbitRadiusValue: document.getElementById("svgMotionOrbitRadiusValue"),
+        svgMotionOrbitTilt: document.getElementById("svgMotionOrbitTilt"),
+        svgMotionOrbitTiltValue: document.getElementById("svgMotionOrbitTiltValue"),
+        playMotionSvg: document.getElementById("playMotionSvg"),
+        generateMotionSvg: document.getElementById("generateMotionSvg"),
+        downloadMotionSvg: document.getElementById("downloadMotionSvg"),
+        svgMotionOutput: document.getElementById("svgMotionOutput"),
+        svgMotionPreview: document.getElementById("svgMotionPreview")
+      };
+      const motionSpecificGroups = Array.from(document.querySelectorAll(".motion-specific"));
+
+      let latestAnimatedSvgMarkup = "";
+      let sourceSvgMarkup = "";
+
+      function clamp(value, min, max) {
+        return Math.min(max, Math.max(min, value));
+      }
+
+      function getSvgMotionCenter(svgNode) {
+        const viewBox = svgNode.getAttribute("viewBox");
+        if (viewBox) {
+          const parts = viewBox
+            .trim()
+            .split(/\s+/)
+            .map(Number)
+            .filter((part) => Number.isFinite(part));
+          if (parts.length === 4) {
+            const [minX, minY, width, height] = parts;
+            return { cx: minX + width / 2, cy: minY + height / 2 };
+          }
+        }
+
+        const width = Number.parseFloat(svgNode.getAttribute("width") ?? "0") || 24;
+        const height = Number.parseFloat(svgNode.getAttribute("height") ?? "0") || 24;
+        return { cx: width / 2, cy: height / 2 };
+      }
+
+      function getViewBoxParts(svgNode) {
+        const viewBox = svgNode.getAttribute("viewBox");
+        if (viewBox) {
+          const parts = viewBox
+            .trim()
+            .split(/\s+/)
+            .map(Number)
+            .filter((part) => Number.isFinite(part));
+          if (parts.length === 4) return parts;
+        }
+
+        const width = Number.parseFloat(svgNode.getAttribute("width") ?? "0") || 24;
+        const height = Number.parseFloat(svgNode.getAttribute("height") ?? "0") || 24;
+        return [0, 0, width, height];
+      }
+
+      function expandViewBoxForMotion(svgNode, motionType, settings) {
+        const [minX, minY, width, height] = getViewBoxParts(svgNode);
+        let paddingRatio = 0;
+
+        if (motionType === "rotate" || motionType === "wobble" || motionType === "swing") paddingRatio = 0.3;
+        if (motionType === "pulse") paddingRatio = 0.2;
+        if (motionType === "float") paddingRatio = 0.2;
+        if (motionType === "bounce") paddingRatio = 0.28;
+        if (motionType === "orbit") paddingRatio = 0.42;
+        if (motionType === "shake") paddingRatio = 0.34;
+        if (motionType === "flip") paddingRatio = 0.38;
+        if (motionType === "heartbeat") paddingRatio = 0.24;
+        paddingRatio += settings.distancePercent / 100 * 0.25;
+
+        const padX = width * paddingRatio;
+        const padY = height * paddingRatio;
+        svgNode.setAttribute(
+          "viewBox",
+          `${minX - padX} ${minY - padY} ${width + padX * 2} ${height + padY * 2}`
+        );
+        svgNode.setAttribute("overflow", "visible");
+      }
+
+      function getMotionSettings() {
+        return {
+          speedMultiplier: clamp(Number(controls.svgMotionSpeed.value), 0.2, 4),
+          loopCount: clamp(Number(controls.svgMotionLoopCount.value), 1, 20),
+          easing: controls.svgMotionEasing.value,
+          angleDegrees: clamp(Number(controls.svgMotionAngle.value), 15, 720),
+          direction: controls.svgMotionDirection.value === "reverse" ? -1 : 1,
+          scaleAmount: clamp(Number(controls.svgMotionScaleAmount.value), 1.02, 1.8),
+          pulseBias: clamp(Number(controls.svgMotionPulseBias.value), 0, 1),
+          distancePercent: clamp(Number(controls.svgMotionDistance.value), 2, 40),
+          bounciness: clamp(Number(controls.svgMotionBounciness.value), 0, 1),
+          orbitRadiusPercent: clamp(Number(controls.svgMotionOrbitRadius.value), 2, 45),
+          orbitTiltDegrees: clamp(Number(controls.svgMotionOrbitTilt.value), -45, 45)
+        };
+      }
+
+      function createMotionElements(svgNode, motionType, durationSeconds, settings) {
+        const motionGroup = document.createElementNS("http://www.w3.org/2000/svg", "g");
+        const existingChildren = Array.from(svgNode.childNodes);
+        existingChildren.forEach((child) => motionGroup.appendChild(child));
+
+        const { cx, cy } = getSvgMotionCenter(svgNode);
+        const effectiveDuration = Math.max(0.05, durationSeconds / settings.speedMultiplier);
+        const duration = `${effectiveDuration}s`;
+        const repeatCount = String(settings.loopCount);
+        const directionSign = settings.direction === -1 ? -1 : 1;
+        const swingAngle = Math.max(4, settings.angleDegrees * 0.07);
+        const [viewMinX, viewMinY, viewWidth, viewHeight] = getViewBoxParts(svgNode);
+        const travelY = (viewHeight * settings.distancePercent) / 100;
+        const orbitRadius = (Math.min(viewWidth, viewHeight) * settings.orbitRadiusPercent) / 100;
+        const easingKeySplines = {
+          linear: "0 0 1 1",
+          "ease-in-out": "0.42 0 0.58 1",
+          "ease-in": "0.42 0 1 1",
+          "ease-out": "0 0 0.58 1",
+          "ease-in-sine": "0.47 0 0.745 0.715",
+          "ease-out-sine": "0.39 0.575 0.565 1",
+          "ease-in-out-sine": "0.445 0.05 0.55 0.95",
+          "ease-in-cubic": "0.55 0.055 0.675 0.19",
+          "ease-out-cubic": "0.215 0.61 0.355 1",
+          "ease-in-out-cubic": "0.645 0.045 0.355 1",
+          "ease-in-back": "0.6 -0.28 0.735 0.045",
+          "ease-out-back": "0.175 0.885 0.32 1.275",
+          "ease-in-out-back": "0.68 -0.55 0.265 1.55"
+        };
+        const easingSpline = easingKeySplines[settings.easing] ?? easingKeySplines["ease-in-out"];
+
+        if (motionType === "rotate") {
+          const rotate = document.createElementNS("http://www.w3.org/2000/svg", "animateTransform");
+          rotate.setAttribute("attributeName", "transform");
+          rotate.setAttribute("attributeType", "XML");
+          rotate.setAttribute("type", "rotate");
+          rotate.setAttribute("from", `0 ${cx} ${cy}`);
+          rotate.setAttribute("to", `${settings.angleDegrees * directionSign} ${cx} ${cy}`);
+          rotate.setAttribute("dur", duration);
+          rotate.setAttribute("calcMode", "spline");
+          rotate.setAttribute("keyTimes", "0;1");
+          rotate.setAttribute("keySplines", easingSpline);
+          rotate.setAttribute("repeatCount", repeatCount);
+          motionGroup.appendChild(rotate);
+        } else if (motionType === "pulse") {
+          const scale = document.createElementNS("http://www.w3.org/2000/svg", "animateTransform");
+          scale.setAttribute("attributeName", "transform");
+          scale.setAttribute("attributeType", "XML");
+          scale.setAttribute("type", "scale");
+          const peak = settings.scaleAmount;
+          const mid = 1 + (peak - 1) * settings.pulseBias;
+          scale.setAttribute("values", `1;${mid};${peak};${mid};1`);
+          scale.setAttribute("keyTimes", "0;0.25;0.5;0.75;1");
+          scale.setAttribute("dur", duration);
+          scale.setAttribute("repeatCount", repeatCount);
+          scale.setAttribute("additive", "sum");
+          motionGroup.setAttribute("transform-origin", `${cx}px ${cy}px`);
+          motionGroup.appendChild(scale);
+        } else if (motionType === "float") {
+          const translate = document.createElementNS("http://www.w3.org/2000/svg", "animateTransform");
+          translate.setAttribute("attributeName", "transform");
+          translate.setAttribute("attributeType", "XML");
+          translate.setAttribute("type", "translate");
+          translate.setAttribute(
+            "values",
+            `0 0;0 ${-travelY};0 0;0 ${travelY * 0.7};0 0`
+          );
+          translate.setAttribute("keyTimes", "0;0.25;0.5;0.75;1");
+          translate.setAttribute("dur", duration);
+          translate.setAttribute("repeatCount", repeatCount);
+          motionGroup.appendChild(translate);
+        } else if (motionType === "wobble") {
+          const wobble = document.createElementNS("http://www.w3.org/2000/svg", "animateTransform");
+          wobble.setAttribute("attributeName", "transform");
+          wobble.setAttribute("attributeType", "XML");
+          wobble.setAttribute("type", "rotate");
+          wobble.setAttribute(
+            "values",
+            `0 ${cx} ${cy};${swingAngle * directionSign} ${cx} ${cy};${-swingAngle * directionSign} ${cx} ${cy};0 ${cx} ${cy}`
+          );
+          wobble.setAttribute("dur", duration);
+          wobble.setAttribute("repeatCount", repeatCount);
+          motionGroup.appendChild(wobble);
+        } else if (motionType === "bounce") {
+          const bounce = document.createElementNS("http://www.w3.org/2000/svg", "animateTransform");
+          bounce.setAttribute("attributeName", "transform");
+          bounce.setAttribute("attributeType", "XML");
+          bounce.setAttribute("type", "translate");
+          const rebound = travelY * (0.35 + settings.bounciness * 0.45);
+          bounce.setAttribute(
+            "values",
+            `0 0;0 ${travelY};0 ${-rebound};0 ${travelY * 0.55};0 0`
+          );
+          bounce.setAttribute("keyTimes", "0;0.32;0.56;0.78;1");
+          bounce.setAttribute("dur", duration);
+          bounce.setAttribute("repeatCount", repeatCount);
+          motionGroup.appendChild(bounce);
+        } else if (motionType === "orbit") {
+          const orbit = document.createElementNS("http://www.w3.org/2000/svg", "animateMotion");
+          const orbitDirection = directionSign === -1 ? -1 : 1;
+          const ry = orbitRadius * (0.55 + Math.abs(settings.orbitTiltDegrees) / 60);
+          const startX = cx + orbitRadius * orbitDirection;
+          const startY = cy;
+          const endX = cx - orbitRadius * orbitDirection;
+          const path = `M ${startX} ${startY} A ${orbitRadius} ${ry} ${settings.orbitTiltDegrees} 1 1 ${endX} ${startY} A ${orbitRadius} ${ry} ${settings.orbitTiltDegrees} 1 1 ${startX} ${startY}`;
+          orbit.setAttribute("path", path);
+          orbit.setAttribute("dur", duration);
+          orbit.setAttribute("repeatCount", repeatCount);
+          orbit.setAttribute("keyPoints", "0;1");
+          orbit.setAttribute("keyTimes", "0;1");
+          orbit.setAttribute("rotate", "0");
+          motionGroup.appendChild(orbit);
+          motionGroup.setAttribute("transform", `translate(${-viewMinX}, ${-viewMinY})`);
+        } else if (motionType === "shake") {
+          const shakeTranslate = document.createElementNS("http://www.w3.org/2000/svg", "animateTransform");
+          shakeTranslate.setAttribute("attributeName", "transform");
+          shakeTranslate.setAttribute("attributeType", "XML");
+          shakeTranslate.setAttribute("type", "translate");
+          const travelX = Math.max(1.5, travelY * 0.45);
+          shakeTranslate.setAttribute(
+            "values",
+            `0 0;${-travelX} 0;${travelX} 0;${-travelX * 0.75} 0;${travelX * 0.75} 0;0 0`
+          );
+          shakeTranslate.setAttribute("keyTimes", "0;0.14;0.28;0.5;0.72;1");
+          shakeTranslate.setAttribute("dur", duration);
+          shakeTranslate.setAttribute("repeatCount", repeatCount);
+          motionGroup.appendChild(shakeTranslate);
+        } else if (motionType === "swing") {
+          const swing = document.createElementNS("http://www.w3.org/2000/svg", "animateTransform");
+          swing.setAttribute("attributeName", "transform");
+          swing.setAttribute("attributeType", "XML");
+          swing.setAttribute("type", "rotate");
+          const swingAmplitude = Math.max(10, Math.min(50, settings.angleDegrees * 0.1));
+          swing.setAttribute(
+            "values",
+            `0 ${cx} ${cy};${swingAmplitude * directionSign} ${cx} ${cy};${-swingAmplitude * 0.75 * directionSign} ${cx} ${cy};${swingAmplitude * 0.45 * directionSign} ${cx} ${cy};0 ${cx} ${cy}`
+          );
+          swing.setAttribute("keyTimes", "0;0.25;0.5;0.75;1");
+          swing.setAttribute("dur", duration);
+          swing.setAttribute("repeatCount", repeatCount);
+          motionGroup.appendChild(swing);
+        } else if (motionType === "flip") {
+          const flip = document.createElementNS("http://www.w3.org/2000/svg", "animateTransform");
+          flip.setAttribute("attributeName", "transform");
+          flip.setAttribute("attributeType", "XML");
+          flip.setAttribute("type", "scale");
+          const direction = directionSign === -1 ? -1 : 1;
+          const flipDepth = 0.08 + settings.bounciness * 0.22;
+          if (direction === 1) {
+            flip.setAttribute("values", `1 1;${-1 + flipDepth} 1;1 1`);
+          } else {
+            flip.setAttribute("values", `1 1;1 ${-1 + flipDepth};1 1`);
+          }
+          flip.setAttribute("keyTimes", "0;0.5;1");
+          flip.setAttribute("dur", duration);
+          flip.setAttribute("repeatCount", repeatCount);
+          motionGroup.setAttribute("transform-origin", `${cx}px ${cy}px`);
+          motionGroup.appendChild(flip);
+        } else if (motionType === "heartbeat") {
+          const heartbeat = document.createElementNS("http://www.w3.org/2000/svg", "animateTransform");
+          heartbeat.setAttribute("attributeName", "transform");
+          heartbeat.setAttribute("attributeType", "XML");
+          heartbeat.setAttribute("type", "scale");
+          const peak = Math.max(1.08, settings.scaleAmount);
+          const soft = 1 + (peak - 1) * 0.55;
+          heartbeat.setAttribute(
+            "values",
+            `1;${soft};1;${peak};1;${soft};1`
+          );
+          heartbeat.setAttribute("keyTimes", "0;0.12;0.22;0.38;0.56;0.72;1");
+          heartbeat.setAttribute("dur", duration);
+          heartbeat.setAttribute("repeatCount", repeatCount);
+          heartbeat.setAttribute("additive", "sum");
+          motionGroup.setAttribute("transform-origin", `${cx}px ${cy}px`);
+          motionGroup.appendChild(heartbeat);
+        }
+
+        return motionGroup;
+      }
+
+      function syncMotionSpecificControls() {
+        const motionType = controls.svgMotionType.value;
+        motionSpecificGroups.forEach((group) => {
+          const validTypes = (group.dataset.motion ?? "").split(/\s+/).filter(Boolean);
+          group.classList.toggle("is-visible", validTypes.includes(motionType));
+        });
+      }
+
+      function syncControlValueLabels() {
+        controls.svgMotionDurationValue.textContent = controls.svgMotionDuration.value;
+        controls.svgMotionSpeedValue.textContent = controls.svgMotionSpeed.value;
+        controls.svgMotionLoopCountValue.textContent = controls.svgMotionLoopCount.value;
+        controls.svgMotionAngleValue.textContent = controls.svgMotionAngle.value;
+        controls.svgMotionScaleAmountValue.textContent = controls.svgMotionScaleAmount.value;
+        controls.svgMotionPulseBiasValue.textContent = controls.svgMotionPulseBias.value;
+        controls.svgMotionDistanceValue.textContent = controls.svgMotionDistance.value;
+        controls.svgMotionBouncinessValue.textContent = controls.svgMotionBounciness.value;
+        controls.svgMotionOrbitRadiusValue.textContent = controls.svgMotionOrbitRadius.value;
+        controls.svgMotionOrbitTiltValue.textContent = controls.svgMotionOrbitTilt.value;
+      }
+
+      function buildAnimatedSvgMarkup() {
+        const rawSvg = sourceSvgMarkup.trim();
+        if (!rawSvg) return null;
+
+        const parser = new DOMParser();
+        const documentNode = parser.parseFromString(rawSvg, "image/svg+xml");
+        const parseError = documentNode.querySelector("parsererror");
+        if (parseError) {
+          controls.svgMotionOutput.value = "Invalid SVG. Please check markup and try again.";
+          controls.svgMotionPreview.textContent = "Invalid SVG markup";
+          return null;
+        }
+
+        const svgNode = documentNode.documentElement;
+        if (svgNode.tagName.toLowerCase() !== "svg") {
+          controls.svgMotionOutput.value = "Input must include a root <svg> element.";
+          controls.svgMotionPreview.textContent = "Expected root <svg> node";
+          return null;
+        }
+
+        const motionType = controls.svgMotionType.value;
+        const durationSeconds = clamp(Number(controls.svgMotionDuration.value), 0.2, 30);
+        const settings = getMotionSettings();
+        expandViewBoxForMotion(svgNode, motionType, settings);
+        const motionGroup = createMotionElements(svgNode, motionType, durationSeconds, settings);
+        svgNode.appendChild(motionGroup);
+
+        const serialized = new XMLSerializer().serializeToString(svgNode);
+        return serialized;
+      }
+
+      function generateAnimatedSvg() {
+        const serialized = buildAnimatedSvgMarkup();
+        if (!serialized) return;
+        latestAnimatedSvgMarkup = serialized;
+        controls.svgMotionOutput.value = serialized;
+      }
+
+      function playAnimatedSvg() {
+        const serialized = buildAnimatedSvgMarkup();
+        if (!serialized) return;
+        latestAnimatedSvgMarkup = serialized;
+        controls.svgMotionOutput.value = serialized;
+        controls.svgMotionPreview.innerHTML = serialized;
+      }
+
+      function handleSvgUpload(event) {
+        const [file] = event.target.files ?? [];
+        if (!file) return;
+
+        const isSvg = file.type === "image/svg+xml" || file.name.toLowerCase().endsWith(".svg");
+        if (!isSvg) {
+          sourceSvgMarkup = "";
+          latestAnimatedSvgMarkup = "";
+          controls.svgMotionOutput.value = "Please upload a valid .svg file.";
+          controls.svgMotionPreview.textContent = "Invalid file type";
+          return;
+        }
+
+        const reader = new FileReader();
+        reader.onload = () => {
+          sourceSvgMarkup = String(reader.result ?? "");
+          generateAnimatedSvg();
+          controls.svgMotionPreview.textContent = "Click Play Animation to preview";
+        };
+        reader.onerror = () => {
+          sourceSvgMarkup = "";
+          latestAnimatedSvgMarkup = "";
+          controls.svgMotionOutput.value = "Could not read the uploaded file.";
+          controls.svgMotionPreview.textContent = "Upload failed";
+        };
+        reader.readAsText(file);
+      }
+
+      function downloadAnimatedSvg() {
+        if (!latestAnimatedSvgMarkup) return;
+        const blob = new Blob([latestAnimatedSvgMarkup], { type: "image/svg+xml;charset=utf-8" });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement("a");
+        link.href = url;
+        link.download = "animated-icon.svg";
+        link.click();
+        URL.revokeObjectURL(url);
+      }
+
+      controls.svgMotionFile.addEventListener("change", handleSvgUpload);
+      controls.svgMotionDuration.addEventListener("input", syncControlValueLabels);
+      controls.svgMotionType.addEventListener("change", () => {
+        syncMotionSpecificControls();
+        if (sourceSvgMarkup) generateAnimatedSvg();
+      });
+      [
+        controls.svgMotionDuration,
+        controls.svgMotionSpeed,
+        controls.svgMotionLoopCount,
+        controls.svgMotionEasing,
+        controls.svgMotionAngle,
+        controls.svgMotionDirection,
+        controls.svgMotionScaleAmount,
+        controls.svgMotionPulseBias,
+        controls.svgMotionDistance,
+        controls.svgMotionBounciness,
+        controls.svgMotionOrbitRadius,
+        controls.svgMotionOrbitTilt
+      ].forEach((element) => {
+        element.addEventListener("input", () => {
+          syncControlValueLabels();
+          if (sourceSvgMarkup) generateAnimatedSvg();
+        });
+        element.addEventListener("change", () => {
+          syncControlValueLabels();
+          if (sourceSvgMarkup) generateAnimatedSvg();
+        });
+      });
+      controls.playMotionSvg.addEventListener("click", playAnimatedSvg);
+      controls.generateMotionSvg.addEventListener("click", generateAnimatedSvg);
+      controls.downloadMotionSvg.addEventListener("click", downloadAnimatedSvg);
+      syncControlValueLabels();
+      syncMotionSpecificControls();
+      controls.svgMotionPreview.textContent = "Upload an SVG file, then click Play Animation";
+    </script>
+  </body>
+</html>
